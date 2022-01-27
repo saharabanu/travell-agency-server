@@ -77,7 +77,9 @@ async function run(){
                   img: updatedBlog.img,
                   price: updatedBlog.cost,
                   description: updatedBlog.description,
-                  size:updatedBlog.location
+                  name: updatedBlog.name,
+                  category: updatedBlog.category,
+                  location:updatedBlog.location
               }
           }
           const result = await blogsCollection.updateOne(filter, updateDoc, options)
@@ -114,6 +116,16 @@ app.get('/users/:email', async (req, res) => {
   res.json({ admin: isAdmin });
 })
 
+ /// make admin 
+ app.put('/users/admin', async(req,res)=>{
+  const user = req.body;
+  const filter = {email: user.email};
+  const updateDoc = { $set: { role: 'admin'}};
+  const result = await usersCollection.updateOne(filter,updateDoc);
+  
+  res.json(result)
+})
+
 
     // reviews post api 
     app.post('/reviews', async (req, res) => {
@@ -148,3 +160,7 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`Listening at ${port}`)
 })
+
+
+
+// https://lit-coast-44901.herokuapp.com/
