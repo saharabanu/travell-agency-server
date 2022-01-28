@@ -10,24 +10,64 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.jy11d.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.jy11d.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const uri = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0-shard-00-00.jy11d.mongodb.net:27017,cluster0-shard-00-01.jy11d.mongodb.net:27017,cluster0-shard-00-02.jy11d.mongodb.net:27017/myFirstDatabase?ssl=true&replicaSet=atlas-vbci67-shard-0&authSource=admin&retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+
+
+console.log(uri);
 
 async function run(){
   try{
     await client.connect();
     const database = client.db('travell_blogs');
+    const spotCollection = database.collection('spots');
     const blogsCollection = database.collection('blogs');
-    const reviewsCollection = database.collection('Reviews');
+    const userExperienceCollection = database.collection('userExperience');
     const usersCollection = database.collection('Users');
 
-      // get api  
-      app.get('/blogs',async(req,res)=>{
-        const cursor = blogsCollection.find({});
-        const blogs = await cursor.toArray();
-       
-        res.send(blogs)
-    });
+    
+          // get api  
+          app.get('/blogs',async(req,res)=>{
+            const cursor = blogsCollection.find({});
+            const blogs = await cursor.toArray();
+            res.send(blogs)
+        });
+
+      
+
+     //Get Spots API
+     app.get('/spots', async (req, res) => {
+      const cursor = spotCollection.find({});
+      const spots = await cursor.toArray();
+      res.send(spots);
+  })
+
+  
+        //POST UserExperience API
+        app.post('/userExperience', async (req, res) => {
+          const userExperience = req.body;
+          console.log(userExperience);
+          const result = await userExperienceCollection.insertOne(userExperience);
+          res.json(result);
+          console.log(result);
+      })
+
+      //GET Experience API
+      app.get('/userExperience', async (req, res) => {
+          const cursor = userExperienceCollection.find({});
+          const experience = await cursor.toArray();
+          res.send(experience);
+      })
+
+      // //GET Single experience BY ID
+      app.get('/userExperience/:id', async (req, res) => {
+          const id = req.params.id;
+          const query = { _id: ObjectId(id) };
+          const userExperience = await userExperienceCollection.findOne(query);
+          res.json(userExperience);
+      })
      // delete product  api 
   app.delete('/blogDelete/:id', async (req, res) => {
     const id = req.params.id;
@@ -35,6 +75,7 @@ async function run(){
     const result = await blogsCollection.deleteOne(query);
     res.json(result)
 })
+
     
           //  get single product api 
           app.get('/blogs/:id',async(req,res)=>{
@@ -60,13 +101,12 @@ async function run(){
           const id = req.params.id;
           const query = { _id: ObjectId(id) };
           const result = await blogsCollection.findOne(query);
-          // console.log(result);
           res.json(result)
 
       })
 
            // update product api 
-        app.put('/blog/:id', async (req, res) => {
+        app.put('/blogs/:id', async (req, res) => {
           const id = req.params.id;
           const updatedBlog = req.body;
           const filter = { _id: ObjectId(id) };
@@ -75,16 +115,16 @@ async function run(){
               $set: {
                   name: updatedBlog.title,
                   img: updatedBlog.img,
-                  price: updatedBlog.cost,
+                  cost: updatedBlog.cost,
                   description: updatedBlog.description,
                   name: updatedBlog.name,
                   category: updatedBlog.category,
                   location:updatedBlog.location
               }
           }
-          const result = await blogsCollection.updateOne(filter, updateDoc, options)
-          // console.log(result)
-          res.json(result)
+          const result = await blogsCollection.updateOne(filter, updateDoc, options);
+          console.log(result)
+         res.json(result)
       });
 
       
@@ -92,7 +132,6 @@ async function run(){
 app.post('/users', async (req, res) => {
   const user = req.body;
   const result = await usersCollection.insertOne(user);
-  console.log(result);
   res.json(result);
 });
 app.put('/users', async (req, res) => {
@@ -101,10 +140,9 @@ app.put('/users', async (req, res) => {
   const options = { upsert: true };
   const updateDoc = { $set: user };
   const result = await usersCollection.updateOne(filter, updateDoc, options);
-  console.log(result);
   res.json(result);
 });
-// search admin api 
+// // search admin api 
 app.get('/users/:email', async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
@@ -122,24 +160,11 @@ app.get('/users/:email', async (req, res) => {
   const filter = {email: user.email};
   const updateDoc = { $set: { role: 'admin'}};
   const result = await usersCollection.updateOne(filter,updateDoc);
-  
   res.json(result)
 })
 
 
-    // reviews post api 
-    app.post('/reviews', async (req, res) => {
-      const data = req.body;
-      const result = await reviewsCollection.insertOne(data);
-      res.json(result);
-  })
-   // reviews get api 
-   app.get('/reviews', async (req, res) => {
-    const cursor = reviewsCollection.find({});
-    const result = await cursor.toArray();
-    res.json(result)
-});
-
+  
       
 
 
