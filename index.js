@@ -61,6 +61,49 @@ async function run(){
           res.send(experience);
       })
 
+      ///get  all experience
+  app.get("/userExperience", async (req, res) => {
+    const result = await userExperienceCollection.find({}).toArray();
+    res.send(result);
+  });
+
+   // order status update api 
+   app.put('/experienceStatusUpdate/:id', async (req, res) => {
+    const id = req.params.id;
+    const newStatus = req.body;
+    const filter = { _id: ObjectId(id) };
+    const options = { upsert: true };
+    const updatePackage = {
+        $set: {
+            status: newStatus.Status
+        }
+    }
+    const result = await userExperienceCollection.updateOne(filter, updatePackage, options)
+    res.json(result)
+})
+// get  sub catagories experience  api 
+app.get('/catagoriesexperience', async (req, res) => {
+  const status = req.query.status;
+  const query = { status: status };
+  let cursor = {}
+  if (status) {
+      cursor = userExperienceCollection.find(query);
+  } else {
+      cursor = userExperienceCollection.find({});
+  }
+  const result = await cursor.toArray();
+  res.json(result)
+})
+
+ //Delete Order
+ app.delete('/experienceDelete/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: ObjectId(id) };
+  const result = await userExperienceCollection.deleteOne(query);
+
+  res.json(result)
+ });
+
       // //GET Single experience BY ID
       app.get('/userExperience/:id', async (req, res) => {
           const id = req.params.id;
